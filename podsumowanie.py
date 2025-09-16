@@ -1,9 +1,6 @@
 # Import bibliotek
 import streamlit as st
 import io
-import os
-import tempfile
-import shutil
 from pydub import AudioSegment
 from openai import OpenAI
 
@@ -27,7 +24,7 @@ with st.expander("📖 **Opis programu** *(kliknij aby rozwinąć)*"):
 with st.expander("📖 **Instrukcja obsługi** *(kliknij aby rozwinąć)*"):
     st.markdown("""
     ***Wymagane wprowadzenie klucza OpenAI przez użytkownika!***
-    1. Wybierz plik z dysku.  
+    1. Wybierz plik audio lub wideo z dysku.  
     2. Odsłuchaj audio.  
     3. Wygeneruj transkrypcję (Whisper AI) i podsumowanie (GPT).  
     4. Pobierz tekst lub odsłuchaj podsumowanie za pomocą modelu TTS.
