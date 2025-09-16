@@ -2,4 +2,4 @@ streamlit
 pydub
 python-dotenv
 openai
-yt-dlp==2025.09.15
+yt-dlp>=2025.1.1
