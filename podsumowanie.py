@@ -5,9 +5,7 @@ import os
 import tempfile
 import shutil
 from pydub import AudioSegment
-from dotenv import dotenv_values
 from openai import OpenAI
-from yt_dlp import YoutubeDL
 
 # Konfiguracja strony
 st.set_page_config(page_title="Podsumowanie Audio lub Wideo", layout="centered")
@@ -29,8 +27,8 @@ with st.expander("📖 **Opis programu** *(kliknij aby rozwinąć)*"):
 with st.expander("📖 **Instrukcja obsługi** *(kliknij aby rozwinąć)*"):
     st.markdown("""
     ***Wymagane wprowadzenie klucza OpenAI przez użytkownika!***
-    1. Wybierz plik lub wklej link YouTube.  
-    2. Odsłuchaj audio i obejrzyj wideo.  
+    1. Wybierz plik z dysku.  
+    2. Odsłuchaj audio.  
     3. Wygeneruj transkrypcję (Whisper AI) i podsumowanie (GPT).  
     4. Pobierz tekst lub odsłuchaj podsumowanie za pomocą modelu TTS.
     """)
@@ -57,75 +55,12 @@ except Exception as e:
 
 st.divider()
 
-# Pole wyboru: plik z dysku albo link YouTube
-st.markdown("### 📂 Wybierz źródło wideo/audio")
-source = st.radio("Źródło:", ["Plik z dysku", "Link YouTube"])
-
-video_file = None
-
-# Opcja 1 – upload z dysku
-if source == "Plik z dysku":
-    video_file = st.file_uploader(
-        "🎥 **Wybierz plik wideo lub audio:**",
-        type=["mp4", "mov", "avi", "mkv", "mp3", "wav"],
-        key=f"uploader_{st.session_state.uploader_key}",
-    )
-
-# Opcja 2 – link YouTube
-elif source == "Link YouTube":
-    youtube_url = st.text_input("🔗 Wklej link do filmu z YouTube:")
-    if youtube_url:
-        try:
-            # utwórz tymczasowy katalog do pobrania
-            temp_dir = tempfile.mkdtemp(prefix="yt_")
-            ydl_opts = {
-                "format": "bestaudio/best",
-                "outtmpl": os.path.join(temp_dir, "%(id)s.%(ext)s"),
-                "quiet": True,
-                "no_warnings": True,
-                "postprocessors": [{
-                    "key": "FFmpegExtractAudio",
-                    "preferredcodec": "mp3",
-                    "preferredquality": "192",
-                }],
-            }
-
-            with YoutubeDL(ydl_opts) as ydl:
-                info = ydl.extract_info(youtube_url, download=True)
-
-            # spróbuj znaleźć wynikowy plik .mp3 w temp_dir
-            mp3_path = None
-            for fname in os.listdir(temp_dir):
-                if fname.lower().endswith(".mp3"):
-                    mp3_path = os.path.join(temp_dir, fname)
-                    break
-
-            if mp3_path is None:
-                raise RuntimeError("Nie znaleziono pliku MP3 w katalogu tymczasowym po pobraniu.")
-
-            # wczytaj do pamięci
-            with open(mp3_path, "rb") as f:
-                buffer = io.BytesIO(f.read())
-            buffer.name = "youtube_audio.mp3"
-            buffer.seek(0)
-            video_file = buffer
-
-            st.success("✅ Pobrano i skonwertowano audio z YouTube")
-            # wyświetl podgląd wideo (embed)
-            st.video(youtube_url)
-
-        except Exception as e:
-            st.error(f"❌ Błąd pobierania z YouTube: {e}")
-            # dodatkowa wskazówka jeśli to najczęstszy problem (ffmpeg)
-            if "ffmpeg" in str(e).lower() or "ffprobe" in str(e).lower():
-                st.info("Wygląda na problem z ffmpeg. Upewnij się, że ffmpeg jest zainstalowany i w PATH.")
-        finally:
-            # sprzątanie (usuń temp_dir jeśli istnieje)
-            try:
-                if os.path.isdir(temp_dir):
-                    shutil.rmtree(temp_dir)
-            except Exception:
-                pass
+# Wczytanie pliku wideo
+video_file = st.file_uploader(
+    "🎥 **Wybierz plik wideo:**",
+    type=["mp4", "mov", "avi", "mkv", "mp3", "wav"],
+    key=f"uploader_{st.session_state.uploader_key}",
+)
 
 # --------------------------------
 # Obsługa wybranego pliku
